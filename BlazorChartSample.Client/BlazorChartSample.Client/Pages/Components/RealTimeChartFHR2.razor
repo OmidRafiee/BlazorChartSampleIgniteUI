@@ -1,0 +1,121 @@
+﻿@using System.Collections.ObjectModel
+@using BlazorChartSample.Client.Services
+@using BlazorChartSample.Client.ViewModel
+@using IgniteUI.Blazor.Controls
+@using Blazorise
+@inject IIgniteUIBlazor IgniteUIBlazor
+@inject IClientExcelService ClientExcelService
+
+
+
+<div class="container vertical">
+    <div class="options horizotnal" style="padding-bottom: 1rem">
+        <button @onclick="OnDataFeedClick" style="width: 5rem">@DataFeedAction</button>
+        <label class="options-label">Refresh: </label>
+        <label class="options-value">@DataFeedInterval ms</label>
+        <input class="options-slider" type="range" min="5" max="250" step="5"
+               value=@DataFeedInterval @onchange="OnRefreshFrequencyChanged" />
+
+  
+        <CategoryChart Height="500px" Width="700px" @ref="_chart"
+                       ChartType="CategoryChartType.Auto" DataSource="@_data" YAxisExtent="40">
+        </CategoryChart>
+        
+       </div>
+</div>
+
+@code { 
+
+    private List<ExcelViewModel> DataList;
+
+    private ObservableCollection<CategoryDataItem> _data;
+
+
+    private CategoryChart _chart;
+    private CategoryChart Chart
+    {
+        get { return _chart; }
+        set { _chart = value; StateHasChanged(); }
+    }
+
+   
+
+    private double DataFeedInterval = 5;
+    private string DataFeedAction = "Start";
+    private bool DataFeedUpdating = false;
+    private bool RefreshChanged = false;
+
+    private void OnDataUpdate()
+    {
+        if (!DataFeedUpdating) return;
+        if (RefreshChanged) return;
+
+
+        var oldItem = this._data[0];
+        var newItem = CategoryDataSource.GetNewItem(this._data);
+
+        this._data.RemoveAt(0);
+        this.Chart.NotifyRemoveItem(this._data, 0, oldItem);
+        this._data.Add(newItem);
+        this.Chart.NotifyInsertItem(this._data, this._data.Count - 1, newItem);
+
+        Task.Delay((int)this.DataFeedInterval).ContinueWith((t) => OnDataUpdate());
+    }
+  
+
+    protected override async Task OnInitializedAsync()
+    {
+        DataList = await ClientExcelService.GetDataAsync();
+
+        await OnDataGenerateClick();
+    }
+
+    private async Task OnDataGenerateClick()
+    {
+        var dataMappingFHR2 = DataList.MappingToFHR2();
+
+        this._data = new ObservableCollection<CategoryDataItem>(dataMappingFHR2);
+
+        SetupInterval();
+    }
+
+    private void OnDataFeedClick()
+    {
+        DataFeedUpdating = !DataFeedUpdating;
+        DataFeedAction = DataFeedUpdating ? "Stop" : "Start";
+
+        SetupInterval();
+    }
+
+
+
+    private void SetupInterval()
+    {
+        Task.Delay((int)this.DataFeedInterval).ContinueWith((t) => OnDataUpdate());
+
+    }
+
+
+    private void OnDataPointsChanged(ChangeEventArgs args)
+    {
+        double num = double.Parse(args.Value.ToString());
+
+        if (num < 100) num = 100;
+        if (num > 10000) num = 10000;
+
+    }
+
+    private void OnRefreshFrequencyChanged(ChangeEventArgs args)
+    {
+        RefreshChanged = true;
+        double num = double.Parse(args.Value.ToString());
+
+        if (num < 5) num = 5;
+        if (num > 1000) num = 1000;
+
+        this.DataFeedInterval = num;
+
+        RefreshChanged = false;
+        SetupInterval();
+    }
+}

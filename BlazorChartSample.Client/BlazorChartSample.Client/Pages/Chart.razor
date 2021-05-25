@@ -1,0 +1,45 @@
+﻿@page "/chart"
+@using System.Collections.ObjectModel
+@using BlazorChartSample.Client.Services
+@using BlazorChartSample.Client.ViewModel
+@using IgniteUI.Blazor.Controls
+@using Blazorise
+@inject IIgniteUIBlazor IgniteUIBlazor
+@inject IClientExcelService ClientExcelService
+
+
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                FHR1
+            </div>
+            <div class="card-body">
+                <RealTimeChartFHR1></RealTimeChartFHR1>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                FHR2
+            </div>
+            <div class="card-body">
+                <RealTimeChartFHR2></RealTimeChartFHR2>
+
+
+            </div>
+        </div>
+    </div>
+    <div class="col-12 mt-3">
+        <div class="card">
+            <div class="card-header">
+                MHR
+            </div>
+            <div class="card-body">
+                <RealTimeChartMHR></RealTimeChartMHR>
+            </div>
+        </div>
+    </div>
+
+</div>
